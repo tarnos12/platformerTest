@@ -30,6 +30,7 @@ var player;
 var enemy;
 var platforms;
 var cursors;
+var key_z;
     //
 var stars;
 var score = 0;
@@ -50,12 +51,14 @@ function create() {
     game.world.setBounds(0, 0, 3800, 600);
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = game.add.group();
+    groundGroup = game.add.group();
 
     //  We will enable physics for any object that is created in this group
     platforms.enableBody = true;
+    groundGroup.enableBody = true;
 
     // Here we create the ground.
-    var ground = platforms.create(0, game.world.height - 64, 'ground');
+    var ground = groundGroup.create(0, game.world.height - 64, 'ground');
 
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     ground.scale.setTo(3, 2);
@@ -139,7 +142,7 @@ function create() {
 
     //  Our controls.
     cursors = game.input.keyboard.createCursorKeys();
-
+    key_z = game.input.keyboard.addKey(Phaser.Keyboard.Z);
     //Test for mouse click
     game.input.onDown.add(doSomething, this);
     
@@ -148,26 +151,39 @@ function testFunction() {
     if (enemy.body.touching.up) {
         // remove enemy somehow
         console.log("test enemy collision");
+
     }
 }
 function onCollision(player, ledge) {
-    console.log('test');
-    if (ledge.body.touching.up) {
-    console.log('test');
+    if (ledge.body.touching.up && cursors.down.isDown && key_z.isDown) {
+        console.log("Ledge collision up = false");
+        ledge.body.checkCollision.up = false;
         // remove collision top
 
     }
 }
+function afterCollision(player, ledge) {
+    if (!ledge.body.touching.up && !cursors.down.isDown && !ledge.body.checkCollision.up) {
+        console.log("Ledge collision up = true");
+        ledge.body.checkCollision.up = true;
+    }
+}
 function update() {
+    if (key_z.isDown) {
+        console.log("test");
+    }
+    //  Collide the player with the platforms and ground
+    game.physics.arcade.collide(player, platforms, onCollision, afterCollision, this);
+    game.physics.arcade.collide(player, groundGroup);
 
-    //  Collide the player and the stars with the platforms
-    game.physics.arcade.collide(player, platforms);
+    //  Collide the stars with the platforms and ground
     game.physics.arcade.collide(stars, platforms);
-    game.physics.arcade.collide(player, platforms, onCollision, null, this);
+    game.physics.arcade.collide(stars, groundGroup);
 
+    //  Collide the enemies with the platforms and ground
     game.physics.arcade.collide(player, enemy, testFunction, null, this);
-
     game.physics.arcade.collide(enemy, platforms);
+    game.physics.arcade.collide(enemy, groundGroup);
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
     game.physics.arcade.overlap(player, stars, collectStar, null, this);

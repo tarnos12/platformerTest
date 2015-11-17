@@ -34,7 +34,7 @@ var cursors;
 var stars;
 var score = 0;
 var scoreText;
-
+var ledgeArray = [];
 function create() {
     //  We're going to be using physics, so enable the Arcade Physics system
     game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -74,12 +74,15 @@ function create() {
 		[0.3, 8.0, 850, 600 - 8.0 * px],
 		[0.2, 2.0, 1000, 600 - 4.0 * px],
 		[0.2, 10.0, 1150, 600 - 10.0 * px],
+		[1.0, 1.0, 100, 700 - 10.0 * px],
     ];
 
     ledges.forEach(function (info) {
         var ledge = platforms.create(info[2], info[3], 'ground');
         ledge.body.immovable = true;
+        ledge.body.checkCollision.down = false
         ledge.scale.setTo(info[0], info[1]);
+        ledgeArray.push(ledge);
     });
 
     // The player and its settings
@@ -95,7 +98,7 @@ function create() {
     game.camera.follow(player);
     //  Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0.01;
-    player.body.gravity.y = 450;
+    player.body.gravity.y = 600;
     player.body.collideWorldBounds = true;
 
     enemy.body.bounce.y = 0.01;
@@ -136,16 +139,33 @@ function create() {
 
     //  Our controls.
     cursors = game.input.keyboard.createCursorKeys();
+
+    //Test for mouse click
+    game.input.onDown.add(doSomething, this);
     
 }
+function testFunction() {
+    if (enemy.body.touching.up) {
+        // remove enemy somehow
+        console.log("test enemy collision");
+    }
+}
+function onCollision(player, ledge) {
+    console.log('test');
+    if (ledge.body.touching.up) {
+    console.log('test');
+        // remove collision top
 
+    }
+}
 function update() {
 
     //  Collide the player and the stars with the platforms
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(stars, platforms);
+    game.physics.arcade.collide(player, platforms, onCollision, null, this);
 
-    game.physics.arcade.collide(player, enemy);
+    game.physics.arcade.collide(player, enemy, testFunction, null, this);
 
     game.physics.arcade.collide(enemy, platforms);
 
@@ -154,6 +174,10 @@ function update() {
 
     //  Reset the players velocity (movement)
     player.body.velocity.x = 0;
+
+
+    enemy.body.velocity.x = -150; //-150
+    enemy.animations.play('left');
 
     if (cursors.left.isDown)
     {
@@ -193,7 +217,7 @@ function update() {
     //  Allow the player to jump if they are touching the ground.
     if (cursors.up.isDown && player.body.touching.down)
     {
-        player.body.velocity.y = -350;
+        player.body.velocity.y = -450;
     }
     //move scoreboard when player is moving
     if (player.position.x <= 300) {
@@ -202,8 +226,12 @@ function update() {
     else {
         scoreText.position.x = player.position.x - 250;
     }
+   
 }
-
+function doSomething() {
+    console.log('it works!');
+    // will only ever be called once, when the the input is down
+}
 function collectStar (player, star) {
     
     // Removes the star from the screen

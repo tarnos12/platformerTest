@@ -22,17 +22,19 @@ function preload() {
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    game.load.spritesheet('enemy', 'assets/baddie.png', 32, 32);
 
 }
 
 var player;
+var enemy;
 var platforms;
 var cursors;
 
 var stars;
 var score = 0;
 var scoreText;
-
+var ledgeArray = [];
 function create() {
     //  We're going to be using physics, so enable the Arcade Physics system
     game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -72,31 +74,45 @@ function create() {
 		[0.3, 8.0, 850, 600 - 8.0 * px],
 		[0.2, 2.0, 1000, 600 - 4.0 * px],
 		[0.2, 10.0, 1150, 600 - 10.0 * px],
+		[1.0, 1.0, 100, 700 - 10.0 * px],
     ];
 
     ledges.forEach(function (info) {
         var ledge = platforms.create(info[2], info[3], 'ground');
         ledge.body.immovable = true;
+        ledge.body.checkCollision.down = false
         ledge.scale.setTo(info[0], info[1]);
+        ledgeArray.push(ledge);
     });
 
     // The player and its settings
     player = game.add.sprite(300, game.world.height - 150, 'dude');
 
+    // The enemy and its settings
+    enemy = game.add.sprite(500, game.world.height - 150, 'enemy');
+
     //  We need to enable physics on the player
     game.physics.arcade.enable(player);
+    game.physics.arcade.enable(enemy);
 
     game.camera.follow(player);
     //  Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0.01;
-    player.body.gravity.y = 450;
+    player.body.gravity.y = 600;
     player.body.collideWorldBounds = true;
+
+    enemy.body.bounce.y = 0.01;
+    enemy.body.gravity.y = 450;
+    enemy.body.collideWorldBounds = true;
 
     //  Our two animations, walking left and right.
     player.animations.add('left', [0, 1, 2, 3], 10, true);
     player.animations.add('right', [5, 6, 7, 8], 10, true);
     player.animations.add('rightJump', [6], 1, true);
     player.animations.add('leftJump', [1], 1, true);
+
+    enemy.animations.add('left', [1,2], 10, true);
+    enemy.animations.add('right', [3,4], 10, true);
 
     //  Finally some stars to collect
     stars = game.add.group();
@@ -119,25 +135,49 @@ function create() {
 
     //  The score
     scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-
     
 
     //  Our controls.
     cursors = game.input.keyboard.createCursorKeys();
+
+    //Test for mouse click
+    game.input.onDown.add(doSomething, this);
     
 }
+function testFunction() {
+    if (enemy.body.touching.up) {
+        // remove enemy somehow
+        console.log("test enemy collision");
+    }
+}
+function onCollision(player, ledge) {
+    console.log('test');
+    if (ledge.body.touching.up) {
+    console.log('test');
+        // remove collision top
 
+    }
+}
 function update() {
 
     //  Collide the player and the stars with the platforms
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(stars, platforms);
+    game.physics.arcade.collide(player, platforms, onCollision, null, this);
+
+    game.physics.arcade.collide(player, enemy, testFunction, null, this);
+
+    game.physics.arcade.collide(enemy, platforms);
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
     game.physics.arcade.overlap(player, stars, collectStar, null, this);
 
     //  Reset the players velocity (movement)
     player.body.velocity.x = 0;
+
+
+    enemy.body.velocity.x = -150; //-150
+    enemy.animations.play('left');
 
     if (cursors.left.isDown)
     {
@@ -177,11 +217,21 @@ function update() {
     //  Allow the player to jump if they are touching the ground.
     if (cursors.up.isDown && player.body.touching.down)
     {
-        player.body.velocity.y = -350;
+        player.body.velocity.y = -450;
     }
-
+    //move scoreboard when player is moving
+    if (player.position.x <= 300) {
+        scoreText.position.x = 50;
+    }
+    else {
+        scoreText.position.x = player.position.x - 250;
+    }
+   
 }
-
+function doSomething() {
+    console.log('it works!');
+    // will only ever be called once, when the the input is down
+}
 function collectStar (player, star) {
     
     // Removes the star from the screen
